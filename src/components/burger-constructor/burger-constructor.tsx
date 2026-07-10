@@ -1,10 +1,10 @@
-import { FC, useMemo } from 'react';
+import { FC, useMemo, useEffect } from 'react';
 import { TOrder } from '@utils-types';
 import { BurgerConstructorUI } from '@ui';
 import { useDispatch, useSelector } from '../../services/store';
 import { clearConstructor } from '../../services/slices/constructorSlice';
 import { createOrder, clearOrder } from '../../services/slices/orderSlice';
-import { fetchFeeds } from '../../services/slices/feedSlice'; 
+import { fetchFeeds } from '../../services/slices/feedSlice';
 import { useNavigate } from 'react-router-dom';
 
 export const BurgerConstructor: FC = () => {
@@ -35,10 +35,16 @@ export const BurgerConstructor: FC = () => {
     dispatch(createOrder(ingredientIds));
   };
 
+  // Очищаем конструктор и обновляем ленту только после успешного создания заказа
+  useEffect(() => {
+    if (orderNumber) {
+      dispatch(clearConstructor());
+      dispatch(fetchFeeds());
+    }
+  }, [orderNumber, dispatch]);
+
   const closeOrderModal = () => {
-    dispatch(clearOrder());
-    dispatch(clearConstructor());
-    dispatch(fetchFeeds()); 
+    dispatch(clearOrder()); // только закрываем модалку, конструктор остаётся
   };
 
   const price = useMemo(() => {
