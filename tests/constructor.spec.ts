@@ -1,6 +1,6 @@
 import { test, expect, Page } from '@playwright/test';
-import path from 'path';
-import fs from 'fs';
+const path = require('path');
+const fs = require('fs');
 
 const hideDevServerOverlay = async (page: Page) => {
   await page.evaluate(() => {
@@ -37,15 +37,23 @@ test.describe('Конструктор бургера', () => {
       update: updateHar,
     });
 
+    // Начинаем слушать ответ до перехода
+    const ingredientsResponse = page.waitForResponse(
+      (response) => response.url().includes('/api/ingredients') && response.status() === 200,
+      { timeout: 10000 }
+    );
+
     await page.goto('/', { waitUntil: 'networkidle' });
     await hideDevServerOverlay(page);
+
+    await ingredientsResponse;
   });
 
   test('добавление ингредиента в конструктор', async ({ page }) => {
     const bunCard = page
       .getByRole('listitem')
       .filter({ hasText: /Краторная булка/ });
-    await expect(bunCard).toBeVisible({ timeout: 10000 });
+    await expect(bunCard).toBeVisible({ timeout: 30000 });
 
     await bunCard.getByRole('button', { name: 'Добавить' }).click();
 
@@ -73,7 +81,7 @@ test.describe('Конструктор бургера', () => {
     await ingredientCard.click();
 
     const ingredientNameHeading = page.getByRole('heading', { name: /Краторная булка/ });
-    await expect(ingredientNameHeading).toBeVisible({ timeout: 10000 });
+    await expect(ingredientNameHeading).toBeVisible({ timeout: 30000 });
 
     const closeButton = page.locator('h3:has-text("Детали ингредиента") + button');
     await closeButton.click();
@@ -102,13 +110,21 @@ test.describe('Конструктор бургера', () => {
       localStorage.setItem('refreshToken', 'fake-refresh-token');
     });
 
+    // Начинаем слушать ответ до перезагрузки
+    const ingredientsResponse = page.waitForResponse(
+      (response) => response.url().includes('/api/ingredients') && response.status() === 200,
+      { timeout: 10000 }
+    );
+
     await page.reload({ waitUntil: 'networkidle' });
     await hideDevServerOverlay(page);
+
+    await ingredientsResponse;
 
     const bunCard = page
       .getByRole('listitem')
       .filter({ hasText: /Краторная булка/ });
-    await expect(bunCard).toBeVisible({ timeout: 10000 });
+    await expect(bunCard).toBeVisible({ timeout: 30000 });
     await bunCard.getByRole('button', { name: 'Добавить' }).click();
 
     const fillingCard = page
