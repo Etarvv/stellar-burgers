@@ -35,5 +35,8 @@ export default defineConfig({
     url: 'http://localhost:4000',
     reuseExistingServer: !process.env.CI,
     timeout: 180 * 1000,
+    env: {
+      BURGER_API_URL: 'https://norma.education-services.ru',
+    },
   },
 });
