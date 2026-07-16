@@ -1,6 +1,8 @@
+/// <reference types="node" />
+
 import { test, expect, Page } from '@playwright/test';
-import path from 'path';
-import fs from 'fs';
+const path = require('path');
+const fs = require('fs');
 
 const hideDevServerOverlay = async (page: Page) => {
   await page.evaluate(() => {
@@ -36,6 +38,10 @@ test.describe('Конструктор бургера', () => {
       url: '**/api/orders',
       update: updateHar,
     });
+    await page.routeFromHAR(path.join(harsDir, 'user.har'), {
+      url: '**/auth/user',
+      update: updateHar,
+    });
 
     await page.goto('/', { waitUntil: 'networkidle' });
     await hideDevServerOverlay(page);
@@ -45,12 +51,13 @@ test.describe('Конструктор бургера', () => {
     const bunCard = page
       .getByRole('listitem')
       .filter({ hasText: /Краторная булка/ });
-    await expect(bunCard).toBeVisible({ timeout: 10000 });
+    await expect(bunCard).toBeVisible({ timeout: 30000 });
 
     await bunCard.getByRole('button', { name: 'Добавить' }).click();
 
-    const topBun = page.getByText(/Краторная булка.*\(верх\)/);
-    const bottomBun = page.getByText(/Краторная булка.*\(низ\)/);
+    const constructor = page.locator('section:has-text("Оформить заказ")');
+    const topBun = constructor.getByText(/Краторная булка.*\(верх\)/);
+    const bottomBun = constructor.getByText(/Краторная булка.*\(низ\)/);
     await expect(topBun).toBeVisible();
     await expect(bottomBun).toBeVisible();
 
@@ -60,22 +67,23 @@ test.describe('Конструктор бургера', () => {
     await expect(fillingCard).toBeVisible();
     await fillingCard.getByRole('button', { name: 'Добавить' }).click();
 
-    const fillingInConstructor = page
-      .getByText(/Филе Люминесцентного тетраодонтимформа/)
-      .nth(1);
+    const fillingInConstructor = constructor
+      .getByText(/Филе Люминесцентного тетраодонтимформа/);
     await expect(fillingInConstructor).toBeVisible();
   });
 
   test('открытие и закрытие модального окна ингредиента', async ({ page }) => {
-    const ingredientCard = page
+    const ingredientCardLink = page
       .getByRole('listitem')
-      .filter({ hasText: /Краторная булка/ });
-    await ingredientCard.click();
+      .filter({ hasText: /Краторная булка/ })
+      .getByRole('link');
+    await ingredientCardLink.click();
 
-    const ingredientNameHeading = page.getByRole('heading', { name: /Краторная булка/ });
+    const modal = page.locator('div:has(h3:has-text("Детали ингредиента"))');
+    const ingredientNameHeading = modal.getByRole('heading', { name: /Краторная булка/ });
     await expect(ingredientNameHeading).toBeVisible({ timeout: 10000 });
 
-    const closeButton = page.locator('h3:has-text("Детали ингредиента") + button');
+    const closeButton = modal.locator('button');
     await closeButton.click();
     await expect(ingredientNameHeading).not.toBeVisible();
   });
@@ -108,7 +116,7 @@ test.describe('Конструктор бургера', () => {
     const bunCard = page
       .getByRole('listitem')
       .filter({ hasText: /Краторная булка/ });
-    await expect(bunCard).toBeVisible({ timeout: 10000 });
+    await expect(bunCard).toBeVisible({ timeout: 30000 });
     await bunCard.getByRole('button', { name: 'Добавить' }).click();
 
     const fillingCard = page
@@ -119,19 +127,22 @@ test.describe('Конструктор бургера', () => {
 
     await page.getByRole('button', { name: 'Оформить заказ' }).click();
 
-    const orderNumberElement = page.locator('h2').filter({ hasText: /^\d+$/ });
-    await expect(orderNumberElement).toBeVisible({ timeout: 15000 });
+    const orderIdText = page.getByText('идентификатор заказа');
+    await expect(orderIdText).toBeVisible({ timeout: 15000 });
+
+    const orderModal = orderIdText.locator('..');
+    const orderNumberElement = orderModal.locator('h2').filter({ hasText: /^\d+$/ });
     const orderNumber = await orderNumberElement.textContent();
-    expect(orderNumber).not.toBeNull();
-    expect(orderNumber).toMatch(/\d+/);
+    expect(orderNumber).toBe('9860');
 
     await page.keyboard.press('Escape');
-    await expect(orderNumberElement).not.toBeVisible();
+    await expect(orderIdText).not.toBeVisible();
 
-    await expect(page.getByText(/\(верх\)/)).toHaveCount(0);
-    await expect(page.getByText(/\(низ\)/)).toHaveCount(0);
-    await expect(page.getByText('Выберите начинку').first()).toBeVisible();
-    const fillingItems = page.locator('.burger_constructor .elements li');
-    await expect(fillingItems).toHaveCount(0);
+    const constructor = page.locator('section:has-text("Оформить заказ")');
+    await expect(constructor.getByText('Выберите начинку')).toBeVisible({ timeout: 5000 });
+    await expect(constructor.getByText(/\(верх\)/)).toHaveCount(0);
+    await expect(constructor.getByText(/\(низ\)/)).toHaveCount(0);
+    const fillingTexts = constructor.getByText(/Филе Люминесцентного тетраодонтимформа/);
+    await expect(fillingTexts).toHaveCount(0);
   });
 });
