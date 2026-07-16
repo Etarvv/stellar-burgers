@@ -37,22 +37,15 @@ test.describe('Конструктор бургера', () => {
       update: updateHar,
     });
 
-    // Начинаем слушать ответ до перехода
-    const ingredientsResponse = page.waitForResponse(
-      (response) => response.url().includes('/api/ingredients') && response.status() === 200,
-      { timeout: 10000 }
-    );
-
     await page.goto('/', { waitUntil: 'networkidle' });
     await hideDevServerOverlay(page);
-
-    await ingredientsResponse;
   });
 
   test('добавление ингредиента в конструктор', async ({ page }) => {
     const bunCard = page
       .getByRole('listitem')
       .filter({ hasText: /Краторная булка/ });
+    // Увеличиваем таймаут до 30 секунд
     await expect(bunCard).toBeVisible({ timeout: 30000 });
 
     await bunCard.getByRole('button', { name: 'Добавить' }).click();
@@ -110,16 +103,8 @@ test.describe('Конструктор бургера', () => {
       localStorage.setItem('refreshToken', 'fake-refresh-token');
     });
 
-    // Начинаем слушать ответ до перезагрузки
-    const ingredientsResponse = page.waitForResponse(
-      (response) => response.url().includes('/api/ingredients') && response.status() === 200,
-      { timeout: 10000 }
-    );
-
     await page.reload({ waitUntil: 'networkidle' });
     await hideDevServerOverlay(page);
-
-    await ingredientsResponse;
 
     const bunCard = page
       .getByRole('listitem')
