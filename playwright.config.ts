@@ -28,13 +28,13 @@ export default defineConfig({
       use: { ...devices['Desktop Safari'] },
     },
   ],
-  webServer: {
-    command: 'npm run start',
-    url: 'http://localhost:4000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 180 * 1000,
-    env: {
-      BURGER_API_URL: 'https://norma.education-services.ru', 
-    },
+webServer: {
+  command: 'npm run start',
+  url: 'http://localhost:4000',
+  reuseExistingServer: !process.env.CI,
+  timeout: 180 * 1000,
+  env: {
+    BURGER_API_URL: 'https://norma.education-services.ru/api',
   },
+},
 });
